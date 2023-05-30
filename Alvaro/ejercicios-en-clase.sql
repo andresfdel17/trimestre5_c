@@ -152,13 +152,13 @@ datos jardineria.*/
 
 delimiter $$
 drop procedure if exists jardineria.checkFormPay$$
-create procedure jardineria.checkFormPay(IN tipoPago varchar(30))
+create procedure jardineria.checkFormPay(IN tipoPago varchar(30), OUT pago float)
 begin
-	
+	select max(total) into pago from jardineria.pago p where p.forma_pago = tipoPago;
 end$$
 
-select * from jardineria.pago where forma_pago = "PayPal";
-call jardineria.checkFormPay("PayPal");
+call jardineria.checkFormPay("PayPal", @pago);
+select @pago;
 
 /*3. Escribe un procedimiento que reciba como parámetro de entrada una forma
 de pago, que será una cadena de caracteres (Ejemplo: PayPal, Transferencia,
@@ -170,6 +170,15 @@ forma de pago seleccionada como parámetro de entrada:
 • la suma de todos los pagos,
 • el número de pagos realizados para esa forma de pago.
 Deberá hacer uso de la tabla pago de la base de datos jardineria.*/
+delimiter $$
+drop procedure if exists jardineria.checkFormPayMany$$
+create procedure jardineria.checkFormPayMany(IN tipoPago varchar(30))
+begin
+	select max(total), min(total), avg(total), sum(total), count(total)  from jardineria.pago p where p.forma_pago = tipoPago;
+end$$
+
+call jardineria.checkFormPayMany("PayPal");
+
 /*4. Crea una base de datos llamada procedimientos que contenga
 una tabla llamada cuadrados. La tabla cuadrados debe tener dos columnas de
 tipo INT UNSIGNED, una columna llamada número y otra columna
@@ -183,8 +192,58 @@ almacenados en la tabla cuadrados que hemos creado previamente.
 Tenga en cuenta que el procedimiento deberá eliminar el contenido actual de la
 tabla antes de insertar los nuevos valores de los cuadrados que va a calcular.
 Utilice un bucle WHILE para resolver el procedimiento.*/
+create database if not exists procedimientos;
+create table if not exists procedimientos.cuadrados(
+	numero int unsigned,
+    cuadrado int unsigned
+);
+delimiter $$
+drop procedure if exists procedimientos.calcular_cuadrados$$
+create procedure procedimientos.calcular_cuadrados(IN tope int unsigned)
+begin
+	declare inicial int;
+    set inicial=1;
+    truncate procedimientos.cuadrados;
+    while inicial <= tope do
+		insert into procedimientos.cuadrados (numero, cuadrado) values (inicial, power(inicial, 2));
+        set inicial = inicial + 1;
+    end while;
+    select * from  procedimientos.cuadrados;
+end$$
+call procedimientos.calcular_cuadrados(10);
 /*5. Utilice un bucle REPEAT para resolver el procedimiento del ejercicio anterior.*/
+delimiter $$
+drop procedure if exists procedimientos.calcular_cuadradosRPT$$
+create procedure procedimientos.calcular_cuadradosRPT(IN tope int unsigned)
+begin
+	declare inicial int;
+    set inicial=1;
+    truncate procedimientos.cuadrados;
+    repeat 
+		insert into procedimientos.cuadrados (numero, cuadrado) values (inicial, power(inicial, 2));
+        set inicial = inicial + 1;
+	until inicial = tope end repeat;
+    select * from  procedimientos.cuadrados;
+end$$
+call procedimientos.calcular_cuadradosRPT(10);
 /*6. Utilice un bucle LOOP para resolver el procedimiento del ejercicio anterior.*/
+delimiter $$
+drop procedure if exists procedimientos.calcular_cuadradosLOP$$
+create procedure procedimientos.calcular_cuadradosLOP(IN tope int unsigned)
+begin
+	declare inicial int;
+    set inicial=1;
+    truncate procedimientos.cuadrados;
+    proc: loop
+		insert into procedimientos.cuadrados (numero, cuadrado) values (inicial, power(inicial, 2));
+        set inicial = inicial + 1;
+        if inicial = tope then
+			leave proc;
+        end if;
+    end loop;
+    select * from  procedimientos.cuadrados;
+end$$
+call procedimientos.calcular_cuadradosLOP(10);
 /*7. Crea una base de datos llamada procedimientos que contenga
 una tabla llamada ejercicio. La tabla debe tener una única columna
 llamada número y el tipo de dato de esta columna debe ser INT UNSIGNED.
@@ -196,8 +255,36 @@ desde el valor inicial pasado como entrada hasta el 1.
 Tenga en cuenta que el procedimiento deberá eliminar el contenido actual de las
 tablas antes de insertar los nuevos valores.
 Utilice un bucle WHILE para resolver el procedimiento.*/
-/*8. Utilice un bucle REPEAT para resolver el procedimiento del ejercicio anterior.*/
-/*9. Utilice un bucle LOOP para resolver el procedimiento del ejercicio anterior.*/
+create table if not exists procedimientos.ejercicio(
+	numero int unsigned
+);
+delimiter $$
+drop procedure if exists procedimientos.calcular_numeros$$
+create procedure procedimientos.calcular_numeros(IN valor_inicial int unsigned)
+begin
+	declare inicial int;
+    set inicial=1;
+    truncate procedimientos.ejercicio;
+    /*while valor_inicial >= 1 do
+		insert into procedimientos.ejercicio (numero) values (valor_inicial);
+		set valor_inicial = valor_inicial - 1;
+    end while;*/
+    /*8. Utilice un bucle REPEAT para resolver el procedimiento del ejercicio anterior.*/
+    /*repeat 
+		insert into procedimientos.ejercicio (numero) values (valor_inicial);
+		set valor_inicial = valor_inicial - 1;
+    until valor_inicial < 1 end repeat;*/
+    /*9. Utilice un bucle LOOP para resolver el procedimiento del ejercicio anterior.*/
+    proc: loop
+		insert into procedimientos.ejercicio (numero) values (valor_inicial);
+		set valor_inicial = valor_inicial - 1;
+        if valor_inicial < 1 then
+			leave proc;
+        end if;
+    end loop;
+    select * from  procedimientos.ejercicio;
+end$$
+call procedimientos.calcular_numeros(10);
 /*10. Crea una base de datos llamada procedimientos que contenga
 una tabla llamada pares y otra tabla llamada impares. Las dos tablas deben
 tener única columna llamada número y el tipo de dato de esta columna debe
@@ -211,5 +298,47 @@ operación para almacenar los números impares en la tabla impares.
 Tenga en cuenta que el procedimiento deberá eliminar el contenido actual de las
 tablas antes de insertar los nuevos valores.
 Utilice un bucle WHILE para resolver el procedimiento.*/
-/*11. Utilice un bucle REPEAT para resolver el procedimiento del ejercicio anterior.*/
-/*12. Utilice un bucle LOOP para resolver el procedimiento del ejercicio anterior.*/
+create table if not exists procedimientos.pares(
+	numero int unsigned
+);
+create table if not exists procedimientos.impares(
+	numero int unsigned
+);
+delimiter $$
+drop procedure if exists procedimientos.calcular_pares_impares$$
+create procedure procedimientos.calcular_pares_impares(IN tope int unsigned)
+begin
+	declare inicial int;
+    set inicial=1;
+    truncate procedimientos.pares;
+    truncate procedimientos.impares;
+    /*while tope >= inicial do
+		case 
+			when inicial % 2 = 0 then insert into procedimientos.pares(numero) values (inicial);
+			else insert into procedimientos.impares(numero) values (inicial);
+        end case;
+        set inicial = inicial + 1;
+    end while;*/
+    /*11. Utilice un bucle REPEAT para resolver el procedimiento del ejercicio anterior.*/
+    /*repeat 
+		case 
+			when inicial % 2 = 0 then insert into procedimientos.pares(numero) values (inicial);
+			else insert into procedimientos.impares(numero) values (inicial);
+        end case;
+        set inicial = inicial + 1;
+    until inicial > tope end repeat;*/
+    /*12. Utilice un bucle LOOP para resolver el procedimiento del ejercicio anterior.*/
+    proc: loop
+		case 
+			when inicial % 2 = 0 then insert into procedimientos.pares(numero) values (inicial);
+			else insert into procedimientos.impares(numero) values (inicial);
+        end case;
+        set inicial = inicial + 1;
+        if inicial > tope then
+			leave proc;
+        end if;
+    end loop;
+end$$
+select * from  procedimientos.impares;
+select * from  procedimientos.pares;
+call procedimientos.calcular_pares_impares(10);
