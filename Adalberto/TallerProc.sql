@@ -480,3 +480,9 @@ BEGIN
 		THROW;
 	END CATCH;
 END
+
+create procedure ups_listar
+as 
+begin
+select * from cliente;
+end
